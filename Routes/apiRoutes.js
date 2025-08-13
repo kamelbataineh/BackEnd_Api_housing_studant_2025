@@ -1,13 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-// استيراد الكونترولر المسؤول عن العمليات
 const authController = require("../Controllers/controllersUser");
+const rentedController = require("../Controllers/controllersRented");
 
-// مسار تسجيل مستخدم جديد
+// User routes
 router.post("/Userregister", authController.registerUser);
-
-// مسار تسجيل دخول
 router.post("/Userlogin", authController.loginUser);
+
+// Rented routes
+router.post("/Rentedregister", rentedController.registerRented);
+router.post("/Rentedlogin", rentedController.loginRented);
 
 module.exports = router;
