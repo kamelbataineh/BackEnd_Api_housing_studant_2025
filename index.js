@@ -26,3 +26,5 @@ app.listen(PORT, () => {
 
 // npm i nodemon === >   nodmon
 // npm install mongoose
+// npm install bcrypt
+// npm install jsonwebtoken
