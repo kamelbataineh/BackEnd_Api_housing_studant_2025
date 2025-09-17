@@ -1,4 +1,3 @@
-// File: controllers/controllersRented.js
 const Rented = require("../models/rentedModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -28,7 +27,7 @@ exports.registerRented = async (req, res) => {
     // إنشاء المستخدم الجديد
     const newRented = new Rented({
       username,
-      email,
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
     });
 
@@ -45,15 +44,21 @@ exports.registerRented = async (req, res) => {
 // تسجيل دخول المستخدم الإداري
 // --------------------------
 exports.loginRented = async (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password } = req.body; // identifier = username أو email
 
   try {
-    // البحث عن المستخدم
-    const user = await Rented.findOne({ email });
+    // البحث عن المستخدم حسب username أو email
+    const user = await Rented.findOne({
+      $or: [
+        { username: identifier.trim().toLowerCase() },
+        { email: identifier.trim().toLowerCase() },
+      ],
+    });
+
     if (!user) {
       return res
         .status(400)
-        .json({ error: "البريد الإلكتروني أو كلمة السر خاطئة" });
+        .json({ error: "اسم المستخدم/الإيميل أو كلمة السر خاطئة" });
     }
 
     // التحقق من كلمة السر
@@ -61,7 +66,7 @@ exports.loginRented = async (req, res) => {
     if (!isMatch) {
       return res
         .status(400)
-        .json({ error: "البريد الإلكتروني أو كلمة السر خاطئة" });
+        .json({ error: "اسم المستخدم/الإيميل أو كلمة السر خاطئة" });
     }
 
     // إنشاء توكن JWT
@@ -74,12 +79,28 @@ exports.loginRented = async (req, res) => {
       token,
       user: {
         id: user._id,
-        email: user.email,
         username: user.username,
+        email: user.email,
       },
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "حدث خطأ في السيرفر" });
+  }
+};
+
+// --------------------------
+// جلب بيانات المستخدم (profile)
+// --------------------------
+exports.getProfileRented = async (req, res) => {
+  try {
+    // بدون تحقق من التوكن
+    const user = await Rented.findById(req.params.id).select("username email");
+    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "حدث خطأ في السيرفر" });
   }
 };

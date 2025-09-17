@@ -70,3 +70,16 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+exports.getProfileUser = async (req, res) => {
+  try {
+    // بدون تحقق من التوكن
+    const user = await User.findById(req.params.id).select("username email");
+    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+  }
+};
