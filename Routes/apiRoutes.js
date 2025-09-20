@@ -39,5 +39,7 @@ router.get("/housing", housingcontroller.getAllHousings);
 
 router.get("/housing/filter", housingcontroller.getHousingfilter);
 // **GET عقار واحد حسب _id**
+router.get("/housing/search", housingcontroller.getHousingSearch);
 router.get("/housing/:id", housingcontroller.getHousingById);
 module.exports = router;
+// 🔹 البحث حسب الاسم (housingName)

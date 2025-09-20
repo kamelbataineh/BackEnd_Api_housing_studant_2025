@@ -97,9 +97,24 @@ const getHousingfilter = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// 🔹 البحث حسب الاسم (housingName)
+const getHousingSearch = async (req, res) => {
+  const { name } = req.query;
+  try {
+    const housings = await Housing.find({
+      housingName: { $regex: name, $options: "i" }, // بحث جزئي + مش حسّاس لحالة الأحرف
+    });
+    res.json(housings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   addHousing,
   getAllHousings,
   getHousingById,
   getHousingfilter,
+  getHousingSearch,
 };
