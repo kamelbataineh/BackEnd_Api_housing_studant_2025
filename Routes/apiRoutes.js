@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
-
 const authController = require("../Controllers/controllersUser");
+const messagecontroller = require("../Controllers/massegecontroller");
 const rentedController = require("../Controllers/controllersRented");
 const profileRented = require("../Controllers/profileRented");
 const profileUser = require("../Controllers/profileUser");
 const housingcontroller = require("../Controllers/housingcontroller");
-
 const multer = require("multer");
 const path = require("path");
+const { verifyToken } = require("../Middleware/auth");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
@@ -17,11 +17,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// User routes
 router.post("/Userregister", authController.registerUser);
 router.post("/Userlogin", authController.loginUser);
-
-// Rented routes
 router.post("/Rentedregister", rentedController.registerRented);
 router.post("/Rentedlogin", rentedController.loginRented);
 
@@ -31,15 +28,22 @@ router.put("/user/profile/update/:id", authController.getProfileUser);
 
 router.post(
   "/housing/add",
+  verifyToken,
   upload.array("images", 10),
   housingcontroller.addHousing
 );
 
 router.get("/housing", housingcontroller.getAllHousings);
-
 router.get("/housing/filter", housingcontroller.getHousingfilter);
-// **GET عقار واحد حسب _id**
 router.get("/housing/search", housingcontroller.getHousingSearch);
-router.get("/housing/:id", housingcontroller.getHousingById);
+router.get("/housing/my", verifyToken, housingcontroller.getMyHousing);
+// router.put("/housing/update/:id", housingcontroller.updateHousing);
+
+router.delete("/housing/delete/:id", housingcontroller.deleteHousing);
+
+router.post("/messages", messagecontroller.sendMessage);
+router.get("/messages", messagecontroller.getMessages);
+
+// router.get("/messages/:userId", messageController.getUserMessages);
+
 module.exports = router;
-// 🔹 البحث حسب الاسم (housingName)

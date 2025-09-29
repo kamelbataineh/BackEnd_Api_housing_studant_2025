@@ -12,7 +12,7 @@ const housingSchema = new mongoose.Schema({
   weeklyPrice: { type: Number },
   monthlyPrice: { type: Number },
   images: [String],
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: "Rented" },
 });
 
-module.exports = mongoose.model("Housing", housingSchema); // <--- هذا مهم
+module.exports = mongoose.model("Housing", housingSchema);

@@ -2,29 +2,37 @@ const Rented = require("../models/rentedModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-// --------------------------
-// تسجيل مستخدم جديد للإيجارات
-// --------------------------
+////////////////////////////////////////
+///
+///
+///
+///
+// تسجيل مستخدم جديد مأجر
+///
+///
+///
+///
+////////////////////////////////////////
+
 exports.registerRented = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "جميع الحقول مطلوبة" });
-    }
-
-    // تحقق إذا المستخدم موجود مسبقاً
-    const existingUser = await Rented.findOne({ email });
-    if (existingUser) {
       return res
         .status(400)
-        .json({ message: "البريد الإلكتروني موجود مسبقاً" });
+        .json({ message: "All fields are required/جميع الحقول مطلوبة" });
     }
 
-    // تشفير كلمة السر
+    const existingUser = await Rented.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "The email already exists/البريد الإلكتروني موجود مسبقاً",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // إنشاء المستخدم الجديد
     const newRented = new Rented({
       username,
       email: email.toLowerCase().trim(),
@@ -33,21 +41,32 @@ exports.registerRented = async (req, res) => {
 
     await newRented.save();
 
-    res.status(201).json({ message: "تم التسجيل بنجاح!" });
+    res
+      .status(201)
+      .json({ message: "Register successfully!/تم التسجيل بنجاح!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ message: "There was a server error/حدث خطأ في السيرفر" });
   }
 };
 
-// --------------------------
-// تسجيل دخول المستخدم الإداري
-// --------------------------
+////////////////////////////////////////
+///
+///
+///
+///
+// تسجيل دخول المستخدم مأجر
+///
+///
+///
+///
+////////////////////////////////////////
 exports.loginRented = async (req, res) => {
-  const { identifier, password } = req.body; // identifier = username أو email
+  const { identifier, password } = req.body; // identifier = username / email
 
   try {
-    // البحث عن المستخدم حسب username أو email
     const user = await Rented.findOne({
       $or: [
         { username: identifier.trim().toLowerCase() },
@@ -56,26 +75,26 @@ exports.loginRented = async (req, res) => {
     });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ error: "اسم المستخدم/الإيميل أو كلمة السر خاطئة" });
+      return res.status(400).json({
+        error:
+          "Wrong username/email or password / اسم المستخدم/الإيميل أو كلمة السر خاطئة",
+      });
     }
 
-    // التحقق من كلمة السر
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ error: "اسم المستخدم/الإيميل أو كلمة السر خاطئة" });
+      return res.status(400).json({
+        error:
+          "Wrong username/email or password / اسم المستخدم/الإيميل أو كلمة السر خاطئة",
+      });
     }
 
-    // إنشاء توكن JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
     res.status(200).json({
-      message: "تم تسجيل الدخول بنجاح",
+      message: "Successfully logged in / تم تسجيل الدخول بنجاح",
       token,
       user: {
         id: user._id,
@@ -85,22 +104,35 @@ exports.loginRented = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ error: "There was a server error/حدث خطأ في السيرفر" });
   }
 };
-
-// --------------------------
-// جلب بيانات المستخدم (profile)
-// --------------------------
+////////////////////////////////////////
+///
+///
+///
+///
+// جلب بيانات المستخدم profile
+///
+///
+///
+///
+////////////////////////////////////////
 exports.getProfileRented = async (req, res) => {
   try {
-    // بدون تحقق من التوكن
     const user = await Rented.findById(req.params.id).select("username email");
-    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "The user does not exist/المستخدم غير موجود" });
 
     res.status(200).json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ message: "There was a server error/حدث خطأ في السيرفر" });
   }
 };

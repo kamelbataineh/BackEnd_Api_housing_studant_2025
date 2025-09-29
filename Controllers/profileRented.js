@@ -3,7 +3,6 @@ const router = express.Router();
 const Rented = require("../models/rentedModel");
 const jwt = require("jsonwebtoken");
 
-// Middleware للتحقق من JWT
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -16,7 +15,17 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// GET /api/rented/profile/:id
+////////////////////////////////////////
+///
+///
+///
+///
+/// profile rented
+///
+///
+///
+///
+////////////////////////////////////////
 router.get("/profile/:id", verifyToken, async (req, res) => {
   try {
     if (req.userId !== req.params.id) {

@@ -4,10 +4,9 @@ const Housing = require("../models/housingModel");
 const multer = require("multer");
 const path = require("path");
 
-// إعداد multer لحفظ الصور
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // مجلد لحفظ الصور
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -15,7 +14,11 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
+//////////////////
+//////////////////
+//////////////////
+//////////////////
+//////////////////
 const addHousing = async (req, res) => {
   try {
     const {
@@ -31,13 +34,13 @@ const addHousing = async (req, res) => {
       monthlyPrice,
     } = req.body;
 
-    // الصور المرفوعة
     const images = req.files ? req.files.map((file) => file.path) : [];
 
     const newHousing = new Housing({
       housingName,
       residentType,
       governorate,
+      owner: req.userId,
       region,
       phoneNumber,
       address,
@@ -46,66 +49,145 @@ const addHousing = async (req, res) => {
       weeklyPrice: weeklyPrice ? parseFloat(weeklyPrice) : undefined,
       monthlyPrice: monthlyPrice ? parseFloat(monthlyPrice) : undefined,
       images,
-      // owner: req.userId // ممكن تحذفها إذا ما بدك verifyToken
     });
 
     await newHousing.save();
 
-    res
-      .status(201)
-      .json({ message: "تم إضافة السكن بنجاح", housing: newHousing });
+    res.status(201).json({
+      message: "Housing has been successfully added/ تم إضافة السكن بنجاح",
+      housing: newHousing,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ message: "There was a server error/ حدث خطأ في السيرفر" });
   }
 };
-
+////////////////////////////////////////
+///
+// اضهار الكل
+///
+////////////////////////////////////////
 const getAllHousings = async (req, res) => {
   try {
     const { governorate } = req.query;
     const query = governorate ? { governorate } : {};
-    const housings = await Housing.find(query);
+
+    const housings = await Housing.find(query).populate(
+      "owner",
+      "username email"
+    );
+
     res.status(200).json(housings);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error(err);
+    res.status(500).json({ message: "Server error / خطأ بالسيرفر" });
   }
 };
 
-// جلب عقار واحد حسب _id
+////////////////////////////////////////
+///
+///اظهار حسب ال id
+///
+////////////////////////////////////////
 const getHousingById = async (req, res) => {
   try {
     const { id } = req.params;
-    const housing = await Housing.findById(id);
 
-    if (!housing) return res.status(404).json({ message: "العقار غير موجود" });
+    const housing = await Housing.findById(id).populate(
+      "ownerId",
+      "username email"
+    );
+
+    if (!housing)
+      return res
+        .status(404)
+        .json({ message: "The property does not exist/العقار غير موجود" });
 
     res.status(200).json(housing);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ message: "There was a server error/حدث خطأ في السيرفر" });
   }
 };
+
+////////////////////////////////////////
+///
+/// فلتر حسب طلب المستخدم
+///
+////////////////////////////////////////
 const getHousingfilter = async (req, res) => {
-  const { university, gender } = req.query; // استقبل القيم من ال query
+  const { university, gender } = req.query;
   try {
     const housings = await Housing.find({
-      region: { $regex: `^${university}$`, $options: "i" }, // استخدم region بدل university
+      region: { $regex: `^${university}$`, $options: "i" },
       residentType: { $regex: `^${gender}$`, $options: "i" },
     });
-    res.json(housings); // أرسل النتائج
+    res.json(housings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+////////////////////////////////////////
+///
+/// بحث عن سكن
+///
+////////////////////////////////////////
+const getHousingSearch = async (req, res) => {
+  const { name } = req.query;
+  try {
+    const housings = await Housing.find({
+      housingName: { $regex: name, $options: "i" },
+    });
+    res.json(housings);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 🔹 البحث حسب الاسم (housingName)
-const getHousingSearch = async (req, res) => {
-  const { name } = req.query;
+////////////////////////////////////////
+///
+/// اظهار سكن يخص المستخدم الحالي فقط
+///
+////////////////////////////////////////
+
+const getMyHousing = async (req, res) => {
   try {
-    const housings = await Housing.find({
-      housingName: { $regex: name, $options: "i" }, // بحث جزئي + مش حسّاس لحالة الأحرف
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: "غير مصرح" });
+
+    const myHousings = await Housing.find({ owner: userId });
+
+    res.status(200).json(myHousings);
+  } catch (err) {
+    res.status(500).json({ message: "حدث خطأ في السيرفر", error: err.message });
+  }
+};
+
+module.exports = { getMyHousing };
+
+////////////////////////////////////////
+///
+/// حذف سكن يخص المستخدم الحالي فقط
+///
+////////////////////////////////////////
+const deleteHousing = async (req, res) => {
+  try {
+    const housing = await Housing.findOneAndDelete({
+      _id: req.params.id,
+      owner: req.userId,
     });
-    res.json(housings);
+
+    if (!housing) {
+      return res
+        .status(404)
+        .json({ message: "السكن غير موجود أو ليس لديك صلاحية لحذفه" });
+    }
+
+    res.json({ message: "تم حذف السكن بنجاح" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -117,4 +199,32 @@ module.exports = {
   getHousingById,
   getHousingfilter,
   getHousingSearch,
+  getMyHousing,
+  deleteHousing,
+  // updateHousing,
 };
+
+////////////////////////////////////////
+///
+/// تعديل سكن يخص المستخدم الحالي فقط
+///
+////////////////////////////////////////
+// const updateHousing = async (req, res) => {
+//   try {
+//     const housing = await Housing.findOneAndUpdate(
+//       { _id: req.params.id, owner: req.userId },
+//       req.body,
+//       { new: true }
+//     );
+
+//     if (!housing) {
+//       return res
+//         .status(404)
+//         .json({ message: "السكن غير موجود أو ليس لديك صلاحية لتعديله" });
+//     }
+
+//     res.json(housing);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };

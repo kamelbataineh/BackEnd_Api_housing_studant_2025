@@ -1,25 +1,33 @@
-const User = require("../models/userModel"); // استدعاء موديل المستخدم
-const bcrypt = require("bcrypt"); // مكتبة لتشفير الباسورد
-const jwt = require("jsonwebtoken"); // مكتبة لتوليد التوكن لتسجيل الدخول
+const User = require("../models/userModel");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-// --------------------------
+////////////////////////////////////////
+///
+///
+///
+///
 // تسجيل مستخدم جديد
+///
+///
+///
+///
+////////////////////////////////////////
 exports.registerUser = async (req, res) => {
   const { username, email, password, role } = req.body;
 
   try {
-    // التحقق من وجود username مسبقًا
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ error: "Username already exists" });
+      return res
+        .status(400)
+        .json({ error: "Username already exists / اسم المستخدم موجود بالفعل" });
     }
 
-    // تشفير الباسورد
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // إنشاء المستخدم
     const newUser = new User({
-      username: req.body.username || req.body.email, // ← استخدام الايميل إذا لم يُرسل username
+      username: req.body.username || req.body.email,
       email: req.body.email,
       password: hashedPassword,
       role: req.body.role || "user",
@@ -27,37 +35,52 @@ exports.registerUser = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message: "User registered successfully / تم تسجيل المستخدم بنجاح",
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error / خطأ بالسيرفر" });
   }
 };
 
-// --------------------------
+////////////////////////////////////////
+///
+///
+///
+///
 // تسجيل دخول المستخدم
+///
+///
+///
+///
+////////////////////////////////////////
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }); // البحث عن المستخدم بالإيميل
+    const user = await User.findOne({ email });
     if (!user)
-      return res.status(400).json({ error: "Invalid email or password" });
+      return res.status(400).json({
+        error:
+          "Invalid email or password / بريد إلكتروني أو كلمة مرور غير صالحة",
+      });
 
-    // التحقق من الباسورد
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      return res.status(400).json({ error: "Invalid email or password" });
+      return res.status(400).json({
+        error:
+          "Invalid email or password / بريد إلكتروني أو كلمة مرور غير صالحة",
+      });
 
-    // توليد توكن JWT (نستطيع استخدامه للمصادقة بعدين)
     const token = jwt.sign(
-      { id: user._id, role: user.role }, // نضع الآيدي والدور داخل التوكن
-      process.env.JWT_SECRET, // سر التوكن مخزن بالـ .env
-      { expiresIn: "1d" } // صلاحية التوكن يوم واحد
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
     res.status(200).json({
-      message: "Login successful",
+      message: "Login successful / تسجيل الدخول ناجح",
       token,
       user: {
         id: user._id,
@@ -67,19 +90,33 @@ exports.loginUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error / خطأ بالسيرفر " });
   }
 };
-
+////////////////////////////////////////
+///
+///
+///
+///
+// جلب بيانات المستخدم profile
+///
+///
+///
+///
+////////////////////////////////////////
 exports.getProfileUser = async (req, res) => {
   try {
-    // بدون تحقق من التوكن
     const user = await User.findById(req.params.id).select("username email");
-    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "The user does not exist/المستخدم غير موجود" });
 
     res.status(200).json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
+    res
+      .status(500)
+      .json({ message: "There was a server error/حدث خطأ في السيرفر" });
   }
 };
