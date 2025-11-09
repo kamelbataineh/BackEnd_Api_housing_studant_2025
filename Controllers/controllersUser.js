@@ -13,24 +13,65 @@ const jwt = require("jsonwebtoken");
 ///
 ///
 ////////////////////////////////////////
+
 exports.registerUser = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
+    // ================================
+    // 1️⃣ التحقق من الحقول الفارغة
+    // ================================
+    if (!email || !email.trim()) {
       return res
         .status(400)
-        .json({ error: "Username already exists / اسم المستخدم موجود بالفعل" });
+        .json({ error: "Email is required / الرجاء إدخال البريد الإلكتروني" });
     }
 
+    if (!password || !password.trim()) {
+      return res
+        .status(400)
+        .json({ error: "Password is required / الرجاء إدخال كلمة المرور" });
+    }
+
+    // ================================
+    // 2️⃣ التحقق من صلاحية البريد الإلكتروني
+    // ================================
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid email format / البريد الإلكتروني غير صالح" });
+    }
+
+    // ================================
+    // 3️⃣ التحقق من قوة كلمة المرور
+    // ================================
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password too short / كلمة المرور قصيرة جدًا" });
+    }
+
+    // ================================
+    // 4️⃣ التحقق من وجود البريد مسبقًا
+    // ================================
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
+      return res.status(400).json({
+        error: "Email already exists / البريد الإلكتروني موجود بالفعل",
+      });
+    }
+
+    // ================================
+    // 5️⃣ تشفير كلمة المرور وحفظ المستخدم
+    // ================================
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
-      username: req.body.username || req.body.email,
-      email: req.body.email,
+      username: email.trim(), // نستخدم البريد كاسم المستخدم تلقائيًا
+      email: email.trim(),
       password: hashedPassword,
-      role: req.body.role || "user",
+      role: "user", // دائمًا user
     });
 
     await newUser.save();

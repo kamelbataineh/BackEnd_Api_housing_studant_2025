@@ -26,20 +26,20 @@ const verifyToken = (req, res, next) => {
 ///
 ///
 ////////////////////////////////////////
-router.get("/profile/:id", verifyToken, async (req, res) => {
-  try {
-    if (req.userId !== req.params.id) {
-      return res.status(403).json({ message: "غير مسموح بالوصول" });
-    }
+// router.get("/profile/:id", verifyToken, async (req, res) => {
+//   try {
+//     if (req.userId !== req.params.id) {
+//       return res.status(403).json({ message: "غير مسموح بالوصول" });
+//     }
 
-    const user = await Rented.findById(req.params.id).select("username email");
-    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+//     const user = await Rented.findById(req.params.id).select("username email");
+//     if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
 
-    res.status(200).json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "حدث خطأ في السيرفر" });
-  }
-});
+//     res.status(200).json(user);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "حدث خطأ في السيرفر" });
+//   }
+// });
 
-module.exports = router;
+// module.exports = router;
